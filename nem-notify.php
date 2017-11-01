@@ -1,12 +1,13 @@
 <?php
 /*
-Plugin Name: NEM Payment Notification
-Plugin URI: https://www.nemstuff.uk
-Description: Emails when a payment is received to a NEM address
+Plugin Name: NEM Notify
+Plugin URI: https://www.cogmentis.com
+Description: Emails when a payment is received to a NEM address or harvesting stops
 Author: Rob Woodgate
-Version: 1.1
-Author URI: https://www.nemstuff.uk
-License: (c) 2017 All rights reserved
+Version: 1.2
+Author URI: https://www.cogmentis.com
+License: GPLv3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
 
 //* No direct access
@@ -31,6 +32,6 @@ spl_autoload_register(function ($class_name)
 });
 
 //* Initialize and Instantiate Plugin
-register_activation_hook(  __FILE__, array('NemNotify', 'activate'));
-register_deactivation_hook(__FILE__, array('NemNotify', 'deactivate'));
+register_activation_hook(  __FILE__, array('Nem_Notify', 'activate'));
+register_deactivation_hook(__FILE__, array('Nem_Notify', 'deactivate'));
 $nem_notify = new Nem_Notify();
