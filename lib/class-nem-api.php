@@ -214,8 +214,7 @@ class Nem_Api {
         );
         return isset($types[$type])
             ? $types[$type]
-            : __('Unknown Transaction Type'
-        );
+            : __('Unknown Transaction Type');
     }
 
     /**
@@ -276,7 +275,6 @@ class Nem_Api {
         // Return message if not encrypted
         return (1 == $type)
             ? hex2bin($message)
-            : __('Encrypted Message - Use NanoWallet to view'
-        );
+            : __('Encrypted Message - Use NanoWallet to view');
     }
 }
