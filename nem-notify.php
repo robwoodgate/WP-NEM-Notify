@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: NEM Payment Notification
+Plugin Name: NEM Notify
 Plugin URI: https://www.nemstuff.uk
 Description: Emails when a payment is received to a NEM address or harvesting stops
 Author: Rob Woodgate
