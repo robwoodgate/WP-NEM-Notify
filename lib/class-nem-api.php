@@ -7,7 +7,7 @@ if (!defined('NEM_PAYMENT_NOTIFY_PATH')) {
 
 class Nem_Api {
 
-    public $debug = false;
+    public  $debug = false;
     private $transactions = [];
 
     private $servers = array(
@@ -84,7 +84,7 @@ class Nem_Api {
      *
      * @param  string $address NEM Address to query
      * @param  string $hash The transaction id *UP TO WHICH* transactions are returned
-     * @return array of Transaction objects
+     * @return array of Transaction objects | false
      **/
     public function lookup_transactions($address, $hash=false)
     {
@@ -164,7 +164,8 @@ class Nem_Api {
 
     /**
      * Get the transaction hash
-     * @param object Transaction object
+     * @param  object $txn Transaction object
+     * @return string transaction hash
      */
     public function get_transaction_hash($txn)
     {
@@ -173,7 +174,7 @@ class Nem_Api {
 
     /**
      * Get the transaction data from MultiSig or Regular Transaction
-     * @param  object Transaction object
+     * @param  object $txn Transaction object
      * @return object Transaction data
      */
     public function get_transaction_data($txn)
@@ -188,7 +189,7 @@ class Nem_Api {
 
     /**
      * Get the transaction type
-     * @param  object Transaction object
+     * @param  object $txn Transaction object
      * @return integer NEM Transaction type
      */
     public function get_transaction_type($txn)
@@ -199,7 +200,7 @@ class Nem_Api {
 
     /**
      * Get transaction type description
-     * @param  object Transaction object
+     * @param  integer $type NEM Transaction type
      * @return string Human friendly type description
      */
     public function get_transaction_type_description($type)
@@ -221,7 +222,8 @@ class Nem_Api {
      * Get the unix timestamp of a transaction
      * NB NEM timeStamps are relative to genesis block:
      * 29/03/2015 @ 12:06am (UTC) = 1427587585 unixtime
-     * @param object Transaction object
+     * @param  object $txn Transaction object
+     * @return integer Unix timestamp
      */
     public function get_transaction_time($txn)
     {
@@ -230,9 +232,9 @@ class Nem_Api {
     }
 
     /**
-     * Get the transaction amount
-     * @param  object Transaction object
-     * @return float Amount
+     * Get the transaction amount - including any XEM mosaics
+     * @param  object $txn Transaction object
+     * @return float Amount in XEM
      */
     public function get_transaction_amount($txn)
     {
@@ -256,7 +258,8 @@ class Nem_Api {
 
     /**
      * Get the transaction message
-     * @param object Transaction object
+     * @param  object $txn Transaction object
+     * @return string Decoded message
      */
     public function get_transaction_msg($txn)
     {

@@ -227,6 +227,8 @@ class Nem_Notify {
 
     /**
      * Validates settings fields
+     * @param  array $input Settings from form
+     * @return array of validated options
      */
     public function validate_settings($input)
     {
