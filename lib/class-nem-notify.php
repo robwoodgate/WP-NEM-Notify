@@ -173,10 +173,11 @@ class Nem_Notify {
         <form action="options.php" method="post">
         <?php settings_fields('nem_notify_options'); ?>
         <?php do_settings_sections('nem_notify'); ?>
-
         <input name="Submit" type="submit" value="<?php esc_attr_e('Save Changes'); ?>" />
         </form>
         </div>
+        <p>If you'd like to send me a tip in XEM, you can send it to:<br/>
+        NBOVLA-3V7Z7H-7TT5VZ-4PYRGO-E6Y3DR-RQKACB-77KY</p>
         <?php
     }
 

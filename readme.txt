@@ -1,4 +1,4 @@
-=== NEM Payment Notification ===
+=== NEM Notify ===
 Contributors: robwoodgate
 Tags: nem, blockchain
 Requires at least: 4.0
@@ -8,7 +8,12 @@ Stable tag: trunk
 Sends an email whenever a new payment is received to the specified NEM account
 
 == Description ==
+NEM Notify is a WordPress plugin that lets you monitor a NEM address and receive an email any time new payments are received. You can also monitor your delegated harvesting node and get notified if it stops harvesting for you (this happens if it gets rebooted).
 
+If you'd like to send me a tip in XEM, you can send it to:
+NBOVLA-3V7Z7H-7TT5VZ-4PYRGO-E6Y3DR-RQKACB-77KY
+
+Thanks!
 
 == Installation ==
 1. Upload the entire "nem-notify" folder to your "/wp-content/plugins/" directory.
