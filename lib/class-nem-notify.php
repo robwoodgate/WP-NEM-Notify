@@ -239,6 +239,7 @@ class Nem_Notify {
     public function display_settings_page()
     {
         ?>
+        <div class="wrap">
         <div class="postbox">
             <div class="inside">
                 <form action="options.php" method="post">
@@ -266,6 +267,7 @@ class Nem_Notify {
         </div>
         <p>If you'd like to send me a tip in XEM, you can send it to:<br/>
                 NBOVLA-3V7Z7H-7TT5VZ-4PYRGO-E6Y3DR-RQKACB-77KY</p>
+        </div>
         <?php
     }
 
