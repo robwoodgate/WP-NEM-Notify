@@ -8,7 +8,9 @@ Stable tag: trunk
 Sends an email whenever a new payment is received to the specified NEM account
 
 == Description ==
-NEM Notify is a WordPress plugin that lets you monitor a NEM address and receive an email any time new payments are received. You can also monitor your delegated harvesting node and get notified if it stops harvesting for you (this happens if it gets rebooted).
+NEM Notify is a WordPress plugin that lets you monitor a NEM address and receive an email any time new payments are received. You can also monitor your delegated harvesting node and get notified if it stops harvesting for you (this happens if it gets rebooted or you go under 10k vested XEM).
+
+Also includes a [nem_mosaic_count] shortcode which allows you to display the count of specified mosaic owned by your NEM address (defaults to your XEM balance).
 
 If you'd like to send me a tip in XEM, you can send it to:
 NBOVLA-3V7Z7H-7TT5VZ-4PYRGO-E6Y3DR-RQKACB-77KY
