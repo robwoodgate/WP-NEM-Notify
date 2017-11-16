@@ -19,6 +19,9 @@ class Nem_Notify {
         // Add plugin settings
         add_action('admin_menu', array($this, 'admin_menu'));
         add_action('admin_init', array($this, 'admin_init'));
+
+        // Add Mosaic shortcode
+        add_shortcode('nem_mosaic_count', array($this, 'mosaic_shortcode'));
     }
 
     /**
@@ -117,7 +120,12 @@ class Nem_Notify {
         $body    = __('The Delegated Harvesting check failed for:') . "\n\n";
         $body   .= sprintf(__('Remote Account: %s'), $remote) . "\n";
         $body   .= sprintf(__('Node: %s'), $node) . "\n\n";
-        $body   .= __('Please check your NanoWallet and reactivate harvesting again if needed.');
+        if ( !empty($nem_api->get_last_error()) ) {
+            $body .= sprintf(__('Error: %s'), $nem_api->get_last_error()) . "\n";
+            $body .= __('Please check harvesting status in your NanoWallet if this error persists.');
+        } else {
+            $body .= __('Harvesting is Disabled: Please visit your NanoWallet to reactivate.');
+        }
 
         // Send email
         if (wp_mail(get_option('admin_email'), $subject, $body)) {
@@ -127,11 +135,74 @@ class Nem_Notify {
     }
 
     /**
+     * Shortcode to display the count of specified mosaic owned by address
+     * Caches the lookup for (up to) cache_ttl seconds
+     * Format is as below - you can override any of the plugin defaults, e.g:
+     * [nem_mosaic_count namespace='xxx' name='yyy' divisibility='4']
+     * If no parameters specified, it defaults to your XEM balance
+     */
+    public function mosaic_shortcode( $atts, $content=null )
+    {
+        // Initialise
+        $plugin_defaults = array(
+            'namespace'    => 'nem', // mosaic namespace
+            'name'         => 'xem', // mosaic name
+            'divisibility' => 6,     // divisibility of mosaic (e.g. 6 => 0.000001)
+            'cache_ttl'    => 3600,  // how long to cache result in seconds
+            'timeout'      => 15,    // lookup timeout in seconds
+            'debug'        => false, // prevents caching, writes result to error_log
+        );
+        $atts = shortcode_atts($plugin_defaults, $atts);
+        $options = get_option('nem_notify_options');
+
+        // Build transient cache key (must be 45 characters or less)
+        // See: https://codex.wordpress.org/Transients_API
+        // NEM Address is always 40 characters unformatted, so that's ok!
+        $address = str_replace('-','', $options['nem_address']);
+        $transient = 'nem-' . $address;
+
+        // Flush cache if debug is active
+        if ($atts['debug']) {
+            delete_transient($transient);
+        }
+
+        // Lookup fresh data if no cached copy available
+        if ( false === ($mosaics = get_transient($transient)) ) {
+            $net     = ('N' == $address[0]) ? 'mainnet' : 'testnet';
+            $nem_api = new Nem_Api($net);
+            $mosaics = $nem_api->lookup_mosaics_owned($address);
+
+            // Cache the result for max TTL (NB: can expire before)
+            if ($mosaics) {
+                set_transient($transient, $mosaics, $atts['cache_ttl']);
+                if ($atts['debug']) error_log('NEM Notify Mosaics:' . print_r($mosaics, 1));
+            }
+
+        }
+
+        // Check we got a valid response from API
+        if (false === $mosaics) {
+            return __('???');
+        }
+
+        // Scan for the requested mosaic
+        foreach ($mosaics as $mosaic) {
+            if (strtolower($atts['namespace']) == $mosaic->mosaicId->namespaceId
+                  && strtolower($atts['name']) == $mosaic->mosaicId->name
+            ) {
+                $decimals = (int)$atts['divisibility'];
+                return number_format_i18n($mosaic->quantity / pow(10, $decimals), $decimals);
+            }
+        }
+        return 0; // none found
+    }
+
+    /**
      * Registers plugin settings fields
      */
     function admin_init()
     {
-        add_settings_section('main_section', '',
+        add_settings_section('main_section', 'NEM Notify Settings',
             array($this, 'main_section_desc'), 'nem_notify'
         );
         add_settings_section('harvesting_section', 'Delegated Harvesting',
@@ -168,16 +239,33 @@ class Nem_Notify {
     public function display_settings_page()
     {
         ?>
-        <div>
-        <h2><?php _e('NEM Notify Settings'); ?></h2>
-        <form action="options.php" method="post">
-        <?php settings_fields('nem_notify_options'); ?>
-        <?php do_settings_sections('nem_notify'); ?>
-        <input name="Submit" type="submit" value="<?php esc_attr_e('Save Changes'); ?>" />
-        </form>
+        <div class="postbox">
+            <div class="inside">
+                <form action="options.php" method="post">
+                <?php settings_fields('nem_notify_options'); ?>
+                <?php do_settings_sections('nem_notify'); ?>
+                <input name="Submit" type="submit" value="<?php esc_attr_e('Save Changes'); ?>" class="button button-primary" />
+                </form>
+            </div>
+        </div>
+        <div class="postbox">
+            <div class="inside">
+                <h2>Mosaic Count Shortcode</h2>
+                <p>You can use this shortcode in your WordPress pages/posts to display the quantity of any particular mosaic held by your NEM Address, including your XEM balance (the default)</p>
+                <input type="text" size="50" value="[nem_mosaic_count namespace='xxx' name='yyy' divisibility='4']" onclick="this.select();document.execCommand('copy');"/>
+                <p>Attributes you can set are:</p>
+                <ul>
+                    <li><strong>namespace</strong> (optional):<br>Namespace of mosaic (default: 'nem')</li>
+                    <li><strong>name</strong> (optional):<br>Name of mosaic (default: 'xem')</li>
+                    <li><strong>divisibility</strong> (optional):<br>Divisibility of mosaic (default: '6')</li>
+                    <li><strong>cache_ttl</strong> (optional):<br>Seconds to cache result (default: '3600')</li>
+                    <li><strong>timeout</strong> (optional):<br>Lookup timeout in seconds (default: '15')</li>
+                    <li><strong>debug</strong> (optional):<br>Prevents caching, writes lookup result to php error_log (default: 'false')</li>
+                </ul>
+            </div>
         </div>
         <p>If you'd like to send me a tip in XEM, you can send it to:<br/>
-        NBOVLA-3V7Z7H-7TT5VZ-4PYRGO-E6Y3DR-RQKACB-77KY</p>
+                NBOVLA-3V7Z7H-7TT5VZ-4PYRGO-E6Y3DR-RQKACB-77KY</p>
         <?php
     }
 

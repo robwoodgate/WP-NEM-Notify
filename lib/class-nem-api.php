@@ -9,6 +9,7 @@ class Nem_Api {
 
     public  $debug = false;
     private $transactions = [];
+    private $last_error;
 
     private $servers = array(
         'bigalice3.nem.ninja',
@@ -31,10 +32,20 @@ class Nem_Api {
     {
         // Allow servers to be overriden
         if (is_array($servers) && !empty($servers)) {
-            $this->servers = $servers;
+            $this->servers = array_filter($servers); // Filter any empty values
         } else if ('mainnet' != $servers) {
             $this->servers = $this->testservers;
         }
+    }
+
+    /**
+     * Getter for last_error (read-only)
+     *
+     * @return string Last error encountered
+     */
+    public function get_last_error()
+    {
+        return $this->last_error;
     }
 
     /**
@@ -84,42 +95,41 @@ class Nem_Api {
      *
      * @param  string $address NEM Address to query
      * @param  string $hash The transaction id *UP TO WHICH* transactions are returned
+     * @param  string $txntype Transaction type: incoming|outgoing default: incoming
      * @return array of Transaction objects | false
      **/
-    public function lookup_transactions($address, $hash=false)
+    public function lookup_transactions($address, $hash=false, $txntype='incoming')
     {
-
         // Initialise
+        $txntype = ('incoming' == $txntype) ? 'incoming' : 'outgoing';
         $address = str_replace('-','', $address);
-        $path = ':7890/account/transfers/incoming?address='.$address;
+        $path = '/account/transfers/'.$txntype.'?address='.$address;
         $path = add_query_arg('hash', $hash, $path); // adds only if set
 
-        // Query servers until we get a response
-        foreach ($this->servers as $server){
-            $res = wp_remote_get('http://'.$server.$path);
-            $res = rest_ensure_response($res);
-            if($res->status === 200){
-                break;
-            }
-        }
-
-        // Log if WordPress Error
-        if (is_wp_error($res)) {
-           $error_message = $res->get_error_message();
-           error_log("NEM Notify: $error_message");
-        }
-
-        // Debug log empty or bad response
-        else if(empty($res) || empty($res->status) || $res->status !== 200){
-            error_log('NEM Notify: Invalid response from API: '.print_r($res,1));
-            return false;
-        }
-
-        // Decode and return array of transaction objects
-        $transactions = json_decode($res->data['body']);
+        // Send request
+        $transactions = $this->send_api_request($path);
         if(is_object($transactions) && !empty($transactions->data)) {
-            if ($this->debug) error_log(print_r($transactions->data,1));
             return $transactions->data;
+        }
+        return false;
+    }
+
+    /**
+     * Gets mosaics held by an address
+     *
+     * @param  string $address NEM Address to query
+     * @return array of Mosaic objects | false
+     **/
+    public function lookup_mosaics_owned($address)
+    {
+        // Initialise
+        $address = str_replace('-','', $address);
+        $path = '/account/mosaic/owned?address='.$address;
+
+        // Send request
+        $mosaics = $this->send_api_request($path);
+        if(is_object($mosaics) && !empty($mosaics->data)) {
+            return $mosaics->data;
         }
         return false;
     }
@@ -135,31 +145,63 @@ class Nem_Api {
     {
         // Initialise
         $remote = str_replace('-','', $remote);
-        $path = ':7890/account/status?address='.$remote;
+        $path = '/account/status?address='.$remote;
 
         // Query harvesting node for status
-        $res = wp_remote_get('http://'.$node.$path);
-        $res = rest_ensure_response($res);
+        $res = $this->send_api_request($path, $node);
+
+        // Decode and return status
+        if(is_object($res) && !empty($res->status)) {
+            return 'UNLOCKED' == $res->status;
+        }
+        return false;
+    }
+
+    /**
+     * Sends an api request, querying multiple servers if needed
+     *
+     * @param  string $api_path The api request path, with leading slash
+     * @param  string $node Allows a specific node to be queried (e.g. for harvesting checks)
+     * @return mixed  API object | array of objects | false
+     **/
+    public function send_api_request($api_path, $node='default')
+    {
+        // Check api_path has leading slash
+        $api_path = ('/' != $api_path[0]) ? '/' . $api_path : $api_path;
+
+        // Get server(s) to use - default or a specific node
+        $servers = ('default' == $node) ? $this->servers : array($node);
+
+        // Query servers until we get a response
+        foreach ($servers as $server){
+            $res = wp_remote_get('http://'.$server.':7890'.$api_path);
+            $res = rest_ensure_response($res);
+            if(isset($res->status) && $res->status === 200){
+                break;
+            }
+        }
 
         // Log if WordPress Error
+        $this->last_error = '';
         if (is_wp_error($res)) {
-           $error_message = $res->get_error_message();
-           error_log("NEM Notify: $error_message");
+           $this->last_error = $res->get_error_message();
+           error_log("NEM Notify: {$this->last_error}");
+           return false;
         }
 
         // Debug log empty or bad response
         else if(empty($res) || empty($res->status) || $res->status !== 200){
             error_log('NEM Notify: Invalid response from API: '.print_r($res,1));
+            $this->last_error = 'API failed to respond';
             return false;
         }
 
-        // Decode and return status
-        $body = json_decode($res->data['body']);
-        if(is_object($body) && !empty($body->status)) {
-            if ($this->debug) error_log(print_r($body,1));
-            return 'UNLOCKED' == $body->status;
-        }
-        return false;
+        // Decode and return response object
+        $ret = json_decode($res->data['body']);
+        if(!$ret) return false;
+
+        if ($this->debug) error_log(print_r($ret,1));
+        return $ret;
     }
 
     /**

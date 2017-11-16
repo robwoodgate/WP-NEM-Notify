@@ -4,7 +4,7 @@ Plugin Name: NEM Notify
 Plugin URI: https://www.nemstuff.uk
 Description: Emails when a payment is received to a NEM address or harvesting stops
 Author: Rob Woodgate
-Version: 1.1
+Version: 1.2
 Author URI: https://www.nemstuff.uk
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html

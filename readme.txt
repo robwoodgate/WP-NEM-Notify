@@ -24,12 +24,16 @@ Thanks!
 = Does it work for both mainnet and testnet? =
 Yes. The plugin accepts both MainNet and TestNet addresses
 
+= What's the mosaic count shortcode format? =
+[nem_mosaic_count namespace='nem' name='xem' divisibility='6']
+For advanced options see the plugin settings page
+
 = I'm not getting notified? =
 Check:
 1. You have set your NEM address
 1. You have a valid email set in WP Settings > General
 1. You have port 7890 open on your server firewall
-(you'll see connection refused messages in your error_log if this is the problem)
+(you'll see connection refused messages if this is the problem)
 
 = How often will I get emailed? =
 Roughly hourly, but only if there are new payments in your account.
@@ -39,6 +43,11 @@ website, you might like to hook your WordPress cron into your system task schedu
 https://developer.wordpress.org/plugins/cron/hooking-into-the-system-task-scheduler/
 
 == Changelog ==
+= 1.2 =
+* Added [nem_mosaic_count] shortcode to display count of specific mosaic in the account
+* Improved delegated harvesting check so errors are reported
+* Refactored delegated harvesting check to use send_api_request() method
+
 = 1.1 =
 * Public release
 
